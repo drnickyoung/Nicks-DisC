@@ -1,4 +1,4 @@
-# Nicks-DisC
+# Nick's DisC
 Nick's Disk Controller, project to interface and read floppy disks for example from an Amiga.
 
 ## Disclaimer
@@ -11,31 +11,31 @@ The project aims to create a floppy disk controller. This will connect, via a US
 This is a project that will be completed in stages, these may change over time but the initial plan is:
 
 1. Arduino Interface
-1.1. Connecting an external Amiga floppy disk drive (DD), controlling all elements (except reading & writing)
-1.2. Connecting a standard internal PC floppy disk drive, controlling all elements (except reading & writing)
+..* Connecting an external Amiga floppy disk drive (DD), controlling all elements (except reading & writing)
+..* Connecting a standard internal PC floppy disk drive, controlling all elements (except reading & writing)
 2. Disk reading
-2.1. Get Arduino to read data directly from the drive and transmit, via USB, to connected computer.
-2.2. Depending on 2.1, look at alternative processors/systems.
+..* Get Arduino to read data directly from the drive and transmit, via USB, to connected computer.
+..* Depending on above, look at alternative processors/systems.
 3. Data decoding
-3.1. Get computer software to decode MFM (or other?) data stream.
-3.2. Get Arduino, or alternative, to decode data directly from the drive and transmit, via USB, to connected computer.
-3.3. Depending on 3.2, look at alternative processors/systems.
+..* Get computer software to decode MFM (or other?) data stream.
+..* Get Arduino, or alternative, to decode data directly from the drive and transmit, via USB, to connected computer.
+..* Depending on 3.2, look at alternative processors/systems.
 4. Create img file
-4.1. Create an img, ADF, or other file from the data.
-4.2. Test the file in UAE, VirtualBox, or other.
+..* Create an img, ADF, or other file from the data.
+..* Test the file in UAE, VirtualBox, or other.
 5. Release Version 1
-5.1. Create a PCB and test
-5.2. Release Version 1 - Read only system for MS-DOS and Amiga disks.
+..* Create a PCB and test
+..* Release Version 1 - Read only system for MS-DOS and Amiga disks.
 6. Write Data
-6.1. Allow Arduino, or alternative, to write data to a disk.
-6.2. Update computer software.
-6.3. Test the disk in a REAL system, a PC, Amiga, etc.
+..* Allow Arduino, or alternative, to write data to a disk.
+..* Update computer software.
+..* Test the disk in a REAL system, a PC, Amiga, etc.
 7. Release Version 2
-7.1. Update the PCB, if required, and test
-7.2. Release Version 2 - Read and write system for MS-DOS and Amiga disks.
+..* Update the PCB, if required, and test
+..* Release Version 2 - Read and write system for MS-DOS and Amiga disks.
 8. Expand
-8.1. Add support for other disk formats.
-8.2. Add support for other file types.
-8.3. Add support for 5 1/4 inch and possibly 8 inch drives.
+..* Add support for other disk formats.
+..* Add support for other file types.
+..* Add support for 5 1/4 inch and possibly 8 inch drives.
 
 There are no timescales, this is being done in my spare time with equipment available.
