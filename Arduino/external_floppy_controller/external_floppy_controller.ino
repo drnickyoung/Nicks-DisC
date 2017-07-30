@@ -12,19 +12,19 @@
  * http://comp.sys.amiga.hardware.narkive.com/H9WaY49O/external-floppy-drive-for-amiga-500-options
 */
 
-
-int pin_DiskReady = 2;        //DB23 - Pin 1
-int pin_DiskReadData = 3;     //DB23 - Pin 2
-int pin_DiskMotorControl = 4; //DB23 - Pin 8
-int pin_DiskReset = 6;        //DB23 - Pin 10
-int pin_DiskRemoved = 7;      //DB23 - Pin 11
-int pin_SelectDiskSide = 8;   //DB23 - Pin 13
-int pin_DiskWriteProtect = 9; //DB23 - Pin 14
-int pin_HeadOverTrack0 = 10;  //DB23 - Pin 15
-int pin_Step = 11;            //DB23 - Pin 18
-int pin_HeadDirection = 12;   //DB23 - Pin 19
-int pin_SelectDrive1 = 5;     //DB23 - Pin 21
-int pin_DiskIndexPulse = 13;     //DB23 - Pin 22
+//int is 2 bytes, pins only go upto 13 or so, so use uint8_t/byte
+const byte pin_DiskReady = 2;        //DB23 - Pin 1
+const byte pin_DiskReadData = 3;     //DB23 - Pin 2
+const byte pin_DiskMotorControl = 4; //DB23 - Pin 8
+const byte pin_DiskReset = 6;        //DB23 - Pin 10
+const byte pin_DiskRemoved = 7;      //DB23 - Pin 11
+const byte pin_SelectDiskSide = 8;   //DB23 - Pin 13
+const byte pin_DiskWriteProtect = 9; //DB23 - Pin 14
+const byte pin_HeadOverTrack0 = 10;  //DB23 - Pin 15
+const byte pin_Step = 11;            //DB23 - Pin 18
+const byte pin_HeadDirection = 12;   //DB23 - Pin 19
+const byte pin_SelectDrive1 = 5;     //DB23 - Pin 21
+const byte pin_DiskIndexPulse = 13;     //DB23 - Pin 22
 
 //Pins not currently wired up
 //int pin_SelectDrive2 = ?;     //DB23 - Pin 9
@@ -45,6 +45,25 @@ static const int bytes = 512;
 #define directionToCentre LOW
 #define directionToOuter HIGH
 
+
+#define portOfPin(P)\
+  (((P)>=0&&(P)<8)?&PORTD:(((P)>7&&(P)<14)?&PORTB:&PORTC))
+#define ddrOfPin(P)\
+  (((P)>=0&&(P)<8)?&DDRD:(((P)>7&&(P)<14)?&DDRB:&DDRC))
+#define pinOfPin(P)\
+  (((P)>=0&&(P)<8)?&PIND:(((P)>7&&(P)<14)?&PINB:&PINC))
+#define pinIndex(P)((uint8_t)(P>13?P-14:P&7))
+#define pinMask(P)((uint8_t)(1<<pinIndex(P)))
+
+#define pinAsInput(P) *(ddrOfPin(P))&=~pinMask(P)
+#define pinAsInputPullUp(P) *(ddrOfPin(P))&=~pinMask(P);digitalHigh(P)
+#define pinAsOutput(P) *(ddrOfPin(P))|=pinMask(P)
+#define digitalLow(P) *(portOfPin(P))&=~pinMask(P)
+#define digitalHigh(P) *(portOfPin(P))|=pinMask(P)
+#define isHigh(P)((*(pinOfPin(P))& pinMask(P))>0)
+#define isLow(P)((*(pinOfPin(P))& pinMask(P))==0)
+#define digitalState(P)((uint8_t)isHigh(P))
+
 #define DEBUG
 
 #ifdef DEBUG
@@ -59,7 +78,7 @@ static const int bytes = 512;
 
 void setup() {
   //setup serial monitor
-  Serial.begin(1000000);  
+  Serial.begin(19200);  
   DEBUG_PRINTLN("Starting setup.");
   delay(1000);
 
@@ -103,11 +122,6 @@ void setup() {
 
   waitForIndex();
   
-  //This is not working, we are simply not sampling at a high enough rate
-  //May mean a faster, more powerful, processor.
-  //Still working on it.
-  readData();
-  
   DEBUG_PRINTLN("Finished setup.");  
 }
 
@@ -129,39 +143,6 @@ void MotorControl(bool enabled){
   TurnDF1Off();
   digitalWrite(pin_DiskMotorControl,!enabled);
   TurnDF1On();
-}
-
-void readData() {
-  printState("Beginning read");
-
-  //start spinning
-  TurnMotorOn();
-
-  printState("Waiting for disk ready.");
-  while(digitalRead(pin_DiskReady));
-  printState("Disk ready.");
-  printState("Waiting for index pulse.");
-  //wait for pulse
-  while(digitalRead(pin_DiskIndexPulse));
-  
-  //wait for end of pulse 0
-  while(!digitalRead(pin_DiskIndexPulse));
-
-  //Read the data - just display at moment
-  while(digitalRead(pin_DiskIndexPulse)){
-    if (digitalRead(pin_DiskReadData)){
-      printState(" Data: 1");
-    }else{
-      printState(" Data: 0");
-    }
-  }
-  
-  printState("Pulse done.");
-  printState("end of waiting for index pin to pulse");
-
-  //stop spinning
-  TurnMotorOff();
-  TurnDF1Off();
 }
 
 void waitForIndex() {
