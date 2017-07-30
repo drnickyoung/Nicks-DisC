@@ -1,28 +1,46 @@
+/*
+ * Remember Amiga DD 3.5 disk has:
+ *  80 tracks
+ *  11 sectors per track (5632 bytes per track)
+ *  512 bytes per sector
+ *  
+ *  Rotates c.300rpm
+ *  Encoded using MFM
+ *  
+ * For information also see:
+ * http://www.primrosebank.net/computers/amiga/upgrades/amiga_upgrades_storage_fdis.htm
+ * http://comp.sys.amiga.hardware.narkive.com/H9WaY49O/external-floppy-drive-for-amiga-500-options
+*/
 
-//http://www.primrosebank.net/computers/amiga/upgrades/amiga_upgrades_storage_fdis.htm
-//http://comp.sys.amiga.hardware.narkive.com/H9WaY49O/external-floppy-drive-for-amiga-500-options
-
-//wire up pin_DiskWriteEnable - currently hardwired to +5v
 
 int pin_DiskReady = 2;        //DB23 - Pin 1
 int pin_DiskReadData = 3;     //DB23 - Pin 2
 int pin_DiskMotorControl = 4; //DB23 - Pin 8
-//int pin_SelectDrive2 = 5;     //DB23 - Pin 9
 int pin_DiskReset = 6;        //DB23 - Pin 10
 int pin_DiskRemoved = 7;      //DB23 - Pin 11
 int pin_SelectDiskSide = 8;   //DB23 - Pin 13
 int pin_DiskWriteProtect = 9; //DB23 - Pin 14
 int pin_HeadOverTrack0 = 10;  //DB23 - Pin 15
-//int pin_DiskWriteEnable = 0; //DB23 - Pin 16
-//int pin_DiskWriteData = ?;  //DB23 - Pin 17
 int pin_Step = 11;            //DB23 - Pin 18
 int pin_HeadDirection = 12;   //DB23 - Pin 19
-//int pin_SelectDrive3 = ?;     //DB23 - Pin 20
 int pin_SelectDrive1 = 5;     //DB23 - Pin 21
 int pin_DiskIndexPulse = 13;     //DB23 - Pin 22
 
+//Pins not currently wired up
+//int pin_SelectDrive2 = ?;     //DB23 - Pin 9
+//int pin_SelectDrive3 = ?;     //DB23 - Pin 20
+//int pin_DiskWriteEnable = ?;  //DB23 - Pin 16
+//int pin_DiskWriteData = ?;    //DB23 - Pin 17
+
+//Pins hardwired
+//wire pin_DiskWriteEnable - currently hardwired to +5v to disable any write
+
 unsigned long motorSpinTime = 1000UL; //in ms
 static const int pulseDelayTime = 6;
+
+static const int tracks = 80;
+static const int sectors = 11;
+static const int bytes = 512;
 
 #define directionToCentre LOW
 #define directionToOuter HIGH
@@ -47,7 +65,6 @@ void setup() {
 
   //setup pins.
   //output
-  //pinMode(pin_DiskWriteEnable, OUTPUT);
   pinMode(pin_DiskReset, OUTPUT);
   pinMode(pin_HeadDirection, OUTPUT);
   pinMode(pin_Step, OUTPUT);
@@ -55,7 +72,6 @@ void setup() {
   pinMode(pin_SelectDrive1, OUTPUT);
   pinMode(pin_SelectDiskSide, OUTPUT);
   
-
   //input
   pinMode(pin_DiskReady, INPUT_PULLUP);
   pinMode(pin_DiskIndexPulse, INPUT_PULLUP); //Pin is Open Collector
@@ -66,7 +82,6 @@ void setup() {
   pinMode(pin_DiskReadData, INPUT_PULLUP);
 
   //pin defaults
-  //digitalWrite(pin_DiskWriteEnable, HIGH); //disable write mode, ensure read mode
   digitalWrite(pin_DiskReset, HIGH); //pulse low to reset and turn off motors
   digitalWrite(pin_DiskMotorControl, HIGH); //motor off
   selectDiskSide(1);
@@ -86,12 +101,14 @@ void setup() {
   delay(36);
   stepToOutside();
 
-  //waitForIndex();
+  waitForIndex();
+  
+  //This is not working, we are simply not sampling at a high enough rate
+  //May mean a faster, more powerful, processor.
+  //Still working on it.
   readData();
   
-  DEBUG_PRINTLN("Finished setup.");
-  Serial.println("jfklgdfhlkjdhdlkjhfd");
-  
+  DEBUG_PRINTLN("Finished setup.");  
 }
 
 void selectDiskSide(bool side){
@@ -104,13 +121,8 @@ void selectDiskSide(bool side){
   }
 }
 
-inline void TurnMotorOn(){
-  MotorControl(true);
-}
-
-inline void TurnMotorOff(){
-  MotorControl(false);
-}
+inline void TurnMotorOn(){ MotorControl(true);}
+inline void TurnMotorOff(){ MotorControl(false);}
 
 void MotorControl(bool enabled){
   //start/stop spinning
@@ -134,6 +146,8 @@ void readData() {
   
   //wait for end of pulse 0
   while(!digitalRead(pin_DiskIndexPulse));
+
+  //Read the data - just display at moment
   while(digitalRead(pin_DiskIndexPulse)){
     if (digitalRead(pin_DiskReadData)){
       printState(" Data: 1");
@@ -141,8 +155,8 @@ void readData() {
       printState(" Data: 0");
     }
   }
+  
   printState("Pulse done.");
-
   printState("end of waiting for index pin to pulse");
 
   //stop spinning
@@ -176,26 +190,23 @@ void waitForIndex() {
 
 //print the state of the index and track
 void printState(const char* charPrint) {
-  Serial.print("/RDY ");
-  Serial.print(digitalRead(pin_DiskReady));
-  Serial.print(" Index:");
-  Serial.print(digitalRead(pin_DiskIndexPulse));
-  Serial.print(" Track:");
-  Serial.print(digitalRead(pin_HeadOverTrack0));
-  Serial.print(" ");
-  Serial.println(charPrint);
+  DEBUG_PRINT("/RDY ");
+  DEBUG_PRINT(digitalRead(pin_DiskReady));
+  DEBUG_PRINT(" Index:");
+  DEBUG_PRINT(digitalRead(pin_DiskIndexPulse));
+  DEBUG_PRINT(" Track:");
+  DEBUG_PRINT(digitalRead(pin_HeadOverTrack0));
+  DEBUG_PRINT(" ");
+  DEBUG_PRINTLN(charPrint);
 }
 
 void spinMotor(int seconds){
   DEBUG_PRINT("Spinning motor for ");
   DEBUG_PRINT(seconds);
   DEBUG_PRINTLN(" seconds.");
-  digitalWrite(pin_DiskMotorControl, LOW); //motor on
-  TurnDF1On();
-  TurnDF1Off();
+  TurnMotorOn();
   delay(seconds * 1000);
-  digitalWrite(pin_DiskMotorControl, HIGH); //motor off
-  TurnDF1On();
+  TurnMotorOff();
   TurnDF1Off();
 }
 
